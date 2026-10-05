@@ -1,0 +1,7 @@
+Visibility
+- deploy.onboarding.view
+
+Invite Management
+- deploy.onboarding.send_invite
+- deploy.onboarding.cancel_invite
+- deploy.onboarding.review_submissions

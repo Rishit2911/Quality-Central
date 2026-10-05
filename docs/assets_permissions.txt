@@ -1,0 +1,10 @@
+Visibility
+- deploy.assets.view_personal
+- deploy.assets.view_all
+
+Checklist Management (IT/HR)
+- deploy.assets.manage_onboarding
+- deploy.assets.manage_clearance
+
+Reporting
+- deploy.assets.export_reports

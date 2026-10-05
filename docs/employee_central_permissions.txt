@@ -1,0 +1,19 @@
+Visibility
+- deploy.employees.view_list
+- deploy.employees.view_profile
+- deploy.employees.view_profile_sensitive
+- deploy.employees.view_profile_financial
+
+Creation & Lifecycle
+- deploy.employees.create
+- deploy.employees.offboard
+- deploy.employees.delete
+
+Editing
+- deploy.employees.edit_basic
+- deploy.employees.edit_job
+- deploy.employees.edit_financial
+
+Data & Documents
+- deploy.employees.export
+- deploy.employees.manage_documents

@@ -1,0 +1,20 @@
+Visibility
+- deploy.attendance.view_personal
+- deploy.attendance.view_team
+- deploy.attendance.view_all
+
+Logging & Corrections
+- deploy.attendance.clock_in_out
+- deploy.attendance.request_correction
+- deploy.attendance.approve_correction
+
+Leaves & Time Off
+- deploy.leaves.view_personal
+- deploy.leaves.view_team
+- deploy.leaves.view_all
+- deploy.leaves.request
+- deploy.leaves.approve
+- deploy.leaves.manage_balances
+
+Settings & Configuration
+- deploy.attendance.manage_policies

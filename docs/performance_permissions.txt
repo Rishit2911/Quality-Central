@@ -1,0 +1,17 @@
+Visibility
+- deploy.performance.view_personal
+- deploy.performance.view_team
+- deploy.performance.view_all
+
+KRA Assignments (HR/Admin)
+- deploy.performance.assign_kras
+
+Evaluation & Ratings (Employees/Managers)
+- deploy.performance.submit_self_rating
+- deploy.performance.submit_manager_rating
+
+Assessments
+- deploy.performance.manage_assessments
+
+Reporting & Exports
+- deploy.performance.export_reports

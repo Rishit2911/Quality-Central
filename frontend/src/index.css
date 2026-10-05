@@ -1,0 +1,317 @@
+/* Fonts loaded via <link> in index.html for non-blocking render */
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #CC97FF;
+  --color-secondary: #10B981;
+  --color-surface: #040812;
+  --color-surface-bright: #0B1326;
+  --color-surface-container: #131B2E;
+  --color-on-surface: #DAE2FD;
+  --color-on-surface-variant: #CFC2D6;
+  --color-indigo: #6366F1;
+  --color-error: #FFB4AB;
+
+  --font-family-display: Arial, Helvetica, sans-serif;
+  --font-family-body: Arial, Helvetica, sans-serif;
+
+  --animate-fade-in-up: fade-in-up 0.6s ease-out forwards;
+  --animate-pulse-glow: pulse-glow 4s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.1; transform: scale(1); }
+  50%       { opacity: 0.3; transform: scale(1.1); }
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  background-color: #040812;
+  color: #DAE2FD;
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* ──────────────────────────────────────────────────
+   LANDING PAGE FONT SCOPE
+   The public marketing landing page keeps its original
+   Inter/Manrope typography; every other screen in the
+   tool uses the Arial default set above.
+────────────────────────────────────────────────── */
+.landing-scope {
+  font-family: 'Inter', sans-serif;
+}
+
+/* ──────────────────────────────────────────────────
+   NO ITALICS INSIDE THE TOOL
+   Bold weights and font sizes are untouched — only
+   italic styling is disabled outside the landing page.
+────────────────────────────────────────────────── */
+.italic {
+  font-style: normal !important;
+}
+
+.landing-scope .italic {
+  font-style: italic;
+}
+
+/* ── Shared black hover tooltip ── */
+.app-tooltip {
+  position: fixed;
+  z-index: 9999;
+  transform: translate(-50%, -100%);
+  width: max-content;
+  max-width: min(260px, 80vw);
+  padding: 7px 9px;
+  border-radius: 6px;
+  background: #111111;
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  font: 500 11px/1.35 Arial, Helvetica, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: center;
+  white-space: normal;
+  pointer-events: none;
+}
+
+.app-tooltip--below {
+  transform: translate(-50%, 0);
+}
+
+/* ──────────────────────────────────────────────────
+   SQUARE CORNERS FOR CONTAINERS & CONTROLS
+   Only applies to layout elements, NOT to badges/dots
+────────────────────────────────────────────────── */
+button:not(.rounded-full):not([class*="rounded-full"]),
+input:not(.rounded-full):not([class*="rounded-full"]),
+select:not(.rounded-full):not([class*="rounded-full"]),
+textarea:not(.rounded-full):not([class*="rounded-full"]),
+.glass-panel:not(.rounded-full):not([class*="rounded-full"]),
+[style*="border-radius"]:not(.rounded-full):not([class*="rounded-full"]) {
+  border-radius: 0 !important;
+}
+
+/* ──────────────────────────────────────────────────
+   ALLOW CIRCLES FOR BADGES, AVATARS, DOTS
+   These should always remain circular
+────────────────────────────────────────────────── */
+.rounded-full,
+[class*="rounded-full"],
+.w-4.h-4,
+.w-5.h-5,
+.w-2\.5.h-2\.5,
+.avatar,
+.profile-pic,
+.status-dot,
+.badge-dot,
+.online-indicator,
+[class*="rounded-full"] {
+  border-radius: 9999px !important;
+}
+
+/* ──────────────────────────────────────────────────
+   ALLOW SLIGHTLY ROUNDED FOR TAGS/CHIPS
+────────────────────────────────────────────────── */
+.rounded-lg,
+.rounded-xl,
+.rounded-2xl,
+[class*="rounded-lg"],
+[class*="rounded-xl"],
+[class*="rounded-2xl"] {
+  border-radius: 8px !important;
+}
+
+/* ──────────────────────────────────────────────────
+   SIDEBAR BRAND LOGO
+────────────────────────────────────────────────── */
+.sidebar-brand {
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.sidebar-brand img {
+  display: block;
+  width: min(100%, 72px);
+  height: auto;
+}
+
+/* ──────────────────────────────────────────────────
+   HORIZONTAL LOADER
+────────────────────────────────────────────────── */
+.horizontal-loader {
+  display: flex;
+  min-width: 220px;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px;
+  color: #7c3aed;
+}
+
+.horizontal-loader--screen {
+  width: 100vw;
+  height: 100vh;
+  justify-content: center;
+}
+
+.horizontal-loader__track {
+  width: min(320px, 70vw);
+  height: 5px;
+  overflow: hidden;
+  background: #e9ddff;
+}
+
+.horizontal-loader__bar {
+  width: 42%;
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, #c084fc);
+  animation: horizontal-loader 1s ease-in-out infinite;
+}
+
+.horizontal-loader p {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+@keyframes horizontal-loader {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(260%); }
+}
+
+/* ──────────────────────────────────────────────────
+   GLASS PANEL
+────────────────────────────────────────────────── */
+.glass-panel {
+  background: rgba(11, 19, 38, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  /* Only transition safe compositor properties, never 'all' */
+  transition: border-color 0.2s ease, opacity 0.2s ease;
+  will-change: auto;
+}
+
+/* ──────────────────────────────────────────────────
+   PRIMARY BUTTON
+────────────────────────────────────────────────── */
+.btn-primary {
+  background: #CC97FF;
+  color: #040812;
+  font-weight: 800;
+  padding: 14px 28px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: 11px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  background: #fff;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* ──────────────────────────────────────────────────
+   FORM INPUT
+────────────────────────────────────────────────── */
+.form-input {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 10px 16px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.form-input:focus {
+  border-color: rgba(204,151,255,0.4);
+}
+
+.form-input option {
+  background: #0B1326;
+  color: #fff;
+}
+
+/* ──────────────────────────────────────────────────
+   CUSTOM SCROLLBAR
+────────────────────────────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+/* ──────────────────────────────────────────────────
+   LIGHT THEME & MODAL INPUT CONTRAST FIX
+────────────────────────────────────────────────── */
+.light-theme-override,
+.bg-white,
+.bg-gray-50,
+.bg-gray-100 {
+  color: #111827;
+}
+
+.light-theme-override input,
+.light-theme-override select,
+.light-theme-override textarea,
+.bg-white input:not([type="checkbox"]):not([type="radio"]),
+.bg-white select,
+.bg-white textarea,
+.bg-gray-50 input:not([type="checkbox"]):not([type="radio"]),
+.bg-gray-50 select,
+.bg-gray-50 textarea,
+.bg-gray-100 input:not([type="checkbox"]):not([type="radio"]),
+.bg-gray-100 select,
+.bg-gray-100 textarea {
+  color: #111827 !important;
+}
+
+.light-theme-override input::placeholder,
+.light-theme-override textarea::placeholder,
+.bg-white input::placeholder,
+.bg-white textarea::placeholder,
+.bg-gray-50 input::placeholder,
+.bg-gray-50 textarea::placeholder,
+.bg-gray-100 input::placeholder,
+.bg-gray-100 textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+
+.light-theme-override select option,
+.bg-white select option,
+.bg-gray-50 select option,
+.bg-gray-100 select option {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+}

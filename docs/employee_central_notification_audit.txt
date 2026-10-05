@@ -1,0 +1,226 @@
+============================================================================================================================================================================================================================
+                                                            EMPLOYEE CENTRAL — NOTIFICATION AUDIT & MATRIX
+============================================================================================================================================================================================================================
+
+  ▌ EMPLOYEE DIRECTORY & PROFILE
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Feature / Action                                 | In-App   | Email      | Description                                                        | Reason
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Single Employee Creation                         | NO       | YES        | No self-notification for the admin. New employee receives a        | First contact with the platform. A welcome email sets the tone and ensures
+                                                   |          |            | Welcome Email with login credentials and a one-time password setup | the employee can access the system immediately — standard in Workday,
+                                                   |          |            | link.                                                              | BambooHR, and Rippling.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Bulk Employee Upload                             | NO       | YES        | Admin gets an immediate HTTP response summarising upload results.  | Batch onboarding must still feel personal. Individual welcome emails ensure
+                                                   |          |            | Each successfully created employee receives an individual Welcome  | every new hire has a clear entry point without the admin manually
+                                                   |          |            | Email with credentials and setup link.                             | communicating credentials.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Admin Profile Edit / Update                      | YES      | YES        | Employee gets an in-app alert the moment HR edits their profile.   | Security-critical. If an HR account is compromised and bank or PF details
+                                                   |          |            | An out-of-band email is also sent as a security alert, ensuring    | are changed, the employee must be notified via a channel they directly
+                                                   |          |            | awareness even when the employee is not logged in.                 | control. Standard in Darwinbox and GreytHR.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Self Profile Edit                                | NO       | NO         | Employee edits their own profile via the self-service portal. An   | Self-initiated actions need no external notification — the user already
+                                                   |          |            | immediate UI success toast is sufficient for this routine action.  | knows what they changed. Notifications here add noise without actionable
+                                                   |          |            |                                                                    | value.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Employee Document Upload                         | NO       | NO         | Employee or admin uploads documents (photo, CV, ID). In-app upload | Document uploads are atomic, synchronous actions. No SaaS HR platform sends
+                                                   |          |            | progress and success state in the form provide sufficient          | notifications for routine media uploads — UI form feedback is the expected
+                                                   |          |            | real-time feedback.                                                | standard.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Offboarding Initiation                           | YES      | YES        | Employee receives an in-app alert marking the start of the exit    | Offboarding is a legally significant event. In-app ensures acknowledgement
+                                                   |          |            | process. A formal offboarding email covers the clearance           | within the platform; email creates a persistent record outside it — both
+                                                   |          |            | checklist, asset return instructions, and final settlement         | channels are standard in Workday and SAP SuccessFactors.
+                                                   |          |            | expectations.                                                      | 
+  ·················································┼··········┼············┼····································································┼·············································································
+  Employment Status Change (Terminated / Resigned) | YES      | YES        | Employee receives an in-app banner for the status update. A formal | Status changes are contractual and legally binding. Email creates a paper
+                                                   |          |            | email documents the change with effective date, reason, and next   | trail for compliance, audits, and dispute resolution — a regulatory
+                                                   |          |            | steps — serving as official HR communication.                      | requirement in all HR environments.
+  ·················································┼··········┼············┼····································································┼·············································································
+
+  ▌ ONBOARDING & IDENTITY UNIFICATION
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Feature / Action                                 | In-App   | Email      | Description                                                        | Reason
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Onboarding Invitation Dispatch                   | NO       | YES        | Invitee has no active account yet. A secure, time-limited          | Email is the only available channel before account creation. The invitation
+                                                   |          |            | onboarding link is delivered via email — the sole means of         | must contain the unique token link — without it, onboarding cannot begin.
+                                                   |          |            | initiating the registration flow.                                  | Universal standard in all HRMS.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Token Verification                               | NO       | NO         | Background server-side validation of the onboarding token during   | Token verification is a synchronous API step that happens transparently
+                                                   |          |            | the candidate's registration session. No notification needed —     | during form load. Notifying on internal security checks would be confusing
+                                                   |          |            | this is an invisible infrastructure check.                         | and meaningless to users.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Onboarding Form Completion                       | YES      | OPTIONAL   | HR receives an in-app AdminAlert to review the submitted candidate | HR must know immediately when a candidate submits their data so the approval
+                                                   |          |            | profile. A candidate confirmation email is optional — a            | cycle begins. The candidate email is low priority — the candidate already
+                                                   |          |            | well-designed UI success screen effectively replaces it.           | sees the success state on form submission.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Onboarding Approval & Account Activation         | YES      | YES        | Employee gets an in-app welcome notification on first login. An    | Account activation is the most critical onboarding milestone. Email ensures
+                                                   |          |            | activation email is also sent with the portal URL and login        | the employee can access the platform before their first login. Both channels
+                                                   |          |            | instructions — their official welcome to the organisation.         | needed: in-app for the session, email for the offline journey.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Onboarding Rejection / Revocation                | NO       | YES        | Candidate has no active account, so in-app is not possible. A      | Email is the only reachable channel at this stage. Clear communication here
+                                                   |          |            | formal email explains the rejection or revocation with next steps  | prevents confusion and protects the organisation from disputes — candidates
+                                                   |          |            | — resubmission link or HR contact.                                 | must always be formally notified.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Admin Identity Unification Setup                 | NO       | NO         | A guided first-time setup wizard for the Org Admin to link their   | One-time admin setup completed entirely within the platform. Self-driven and
+                                                   |          |            | user account to an employee profile. In-session UI wizard provides | in-session — no external notification serves any purpose here.
+                                                   |          |            | all confirmation.                                                  | 
+  ·················································┼··········┼············┼····································································┼·············································································
+
+  ▌ ATTENDANCE & LEAVE MANAGEMENT
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Feature / Action                                 | In-App   | Email      | Description                                                        | Reason
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Daily Clock In / Clock Out                       | NO       | NO         | High-frequency daily action. UI clock widget with status indicator | Clock events happen multiple times per day. Notifying every event would
+                                                   |          |            | and time display provides immediate feedback.                      | overwhelm the system and desensitise employees to important alerts — all
+                                                   |          |            |                                                                    | modern HRMS platforms suppress this.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Missed Clock-Out Reminder                        | YES      | YES        | If no clock-out record exists by end of shift, an automated        | Missed clock-outs create payroll inconsistencies and data gaps. Dual-channel
+                                                   |          |            | reminder fires — in-app on next login plus an email reaching them  | notification maximises corrective action before payroll closes. Standard in
+                                                   |          |            | off-platform — prompting an attendance correction.                 | Keka, Darwinbox, and GreytHR.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Leave Application Submission                     | YES      | YES        | Submitting employee gets an in-app confirmation. The reporting     | Leave approval is time-sensitive. Without manager email, requests sit
+                                                   |          |            | manager receives an in-app AdminAlert AND an email requesting      | unapproved for days. Email is the primary approval trigger in most
+                                                   |          |            | immediate review — email is essential for managers away from the   | organisations — a critical gap if missing.
+                                                   |          |            | platform.                                                          | 
+  ·················································┼··········┼············┼····································································┼·············································································
+  Leave Request Approval / Rejection               | YES      | YES        | Employee gets an immediate in-app notification. A formal           | Leave decisions directly impact schedule and pay. The email creates a
+                                                   |          |            | approval/rejection email is also sent with date range, leave type, | referenceable archived record employees can use if disputes arise. Standard
+                                                   |          |            | manager remarks, and updated balance — an official HR record.      | in BambooHR, Workday, and Keka.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Attendance Correction Request                    | YES      | YES        | Manager receives an in-app notification and an email requesting    | Corrections have payroll and compliance implications. Dual notification
+                                                   |          |            | correction review — ensuring prompt action even when off-platform. | prevents requests from going stale. Both channels are already active in the
+                                                   |          |            |                                                                    | current implementation.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Attendance Correction — Approved                 | YES      | NO         | Employee receives an in-app notification confirming the correction | Routine approvals generate low-signal email noise. In-app is sufficient for
+                                                   |          |            | is approved and their record is updated. No email for routine      | expected outcomes. Email is reserved for rejections only, where a written
+                                                   |          |            | approvals.                                                         | reason is required.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Attendance Correction — Rejected                 | YES      | YES        | Employee receives an in-app notification. A rejection email is     | Rejections require the employee to understand why and take action. A written
+                                                   |          |            | also sent with the manager's written reason — giving the employee  | reason via email is far more useful than an in-app popup they may dismiss.
+                                                   |          |            | a referenceable explanation and ability to resubmit.               | Also creates an audit trail for disputed corrections.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Admin Attendance Manual Edit                     | YES      | NO         | Employee receives an in-app notification that an admin directly    | Transparency and compliance. Employees must be aware when admin-initiated
+                                                   |          |            | modified their attendance record for a specific date, including    | changes are made to their records. In-app is sufficient — email would create
+                                                   |          |            | the updated status.                                                | unnecessary alarm for routine HR adjustments.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Leave Balance Warning (Low Balance) [NEW]        | YES      | NO         | When an employee's available leave balance drops below a set       | Prevents surprise situations where employees apply for leave only to find
+                                                   |          |            | threshold (e.g. 2 days remaining), a proactive in-app warning      | insufficient balance. Proactive alerts reduce HR support queries — present
+                                                   |          |            | appears on the attendance dashboard.                               | in BambooHR, Keka, and GreytHR as a UX quality signal.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Unplanned Absence / No Clock-In Alert [NEW]      | YES      | YES        | If an employee has no clock-in past a set threshold (e.g. 10:30    | Managers cannot actively monitor attendance dashboards throughout the day.
+                                                   |          |            | AM) with no approved leave, the reporting manager receives an      | Push notification ensures unplanned absences are caught promptly, enabling
+                                                   |          |            | in-app alert and an email to follow up or mark an unplanned        | welfare check-ins and accurate marking before end of day. Standard in
+                                                   |          |            | absence.                                                           | Darwinbox, Keka, and Zoho People.
+  ·················································┼··········┼············┼····································································┼·············································································
+
+  ▌ PAYROLL & COMPENSATION
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Feature / Action                                 | In-App   | Email      | Description                                                        | Reason
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Pay Cycle Upload & Preview                       | NO       | NO         | Internal admin action to stage and preview the payroll cycle       | Draft payroll is an internal HR operation. Notifying employees before the
+                                                   |          |            | before publishing. Results returned synchronously in the UI. No    | cycle is committed would be premature and confusing. No HR platform sends
+                                                   |          |            | employees are affected yet.                                        | notifications at the preview stage.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Pay Cycle Publishing (Push Payslips)             | YES      | YES        | Each employee receives an in-app notification that their payslip   | Payslip availability is the highest-engagement HR event for employees. Email
+                                                   |          |            | is available, plus a payslip email with a PDF attachment or direct | ensures notification even for those who haven't logged in that month. PDF
+                                                   |          |            | download link from the portal.                                     | via email is the industry norm — BambooHR, Zoho Payroll, and GreytHR all do
+                                                   |          |            |                                                                    | this.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Payslip PDF Download                             | NO       | NO         | On-demand file download initiated by the employee. The browser     | User-initiated, synchronous download action. No notification value — the
+                                                   |          |            | handles the file response directly as a download.                  | user already knows they requested it.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Salary / Compensation Revision                   | YES      | YES        | Employee receives an in-app notification and a formal salary       | Salary changes are contractual. Email creates an official, auditable record.
+                                                   |          |            | revision letter via email with updated CTC, effective date, and    | Employees expect formal written communication for compensation changes —
+                                                   |          |            | compensation components. Note: A dedicated endpoint is recommended | in-app only is considered inadequate in most HR compliance frameworks.
+                                                   |          |            | — the generic profile update cannot distinguish salary changes     | 
+                                                   |          |            | from other edits.                                                  | 
+  ·················································┼··········┼············┼····································································┼·············································································
+
+  ▌ PERFORMANCE & ASSESSMENTS
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Feature / Action                                 | In-App   | Email      | Description                                                        | Reason
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Review Cycle Request / Initiation                | YES      | YES        | Employee receives an in-app banner and an email with the review    | Performance reviews require deliberate effort within a deadline.
+                                                   |          |            | deadline and a direct link to the self-assessment form.            | Dual-channel notification drives high completion rates. Email provides a
+                                                   |          |            |                                                                    | persistent reference — employees frequently dismiss in-app banners without
+                                                   |          |            |                                                                    | acting on them.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Self-Assessment Submission                       | YES      | YES        | The employee's manager receives an in-app alert and an email       | Manager review is a time-boxed appraisal step. Email ensures the manager
+                                                   |          |            | notifying them the self-assessment is submitted and awaiting their | doesn't miss it even when not monitoring the platform. Performance cycle
+                                                   |          |            | review and scoring.                                                | SLAs depend on timely manager action.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Manager Review & Finalization                    | YES      | YES        | Employee receives an in-app notification that their appraisal is   | Finalised reviews contain ratings employees care deeply about. Email creates
+                                                   |          |            | finalised, plus an email with an outcome summary and a link to     | a persistent record and drives employees back to review their appraisal —
+                                                   |          |            | view ratings and feedback.                                         | standard in Lattice, Culture Amp, and Workday.
+  ·················································┼··········┼············┼····································································┼·············································································
+
+  ▌ TRAINING & DEVELOPMENT
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Feature / Action                                 | In-App   | Email      | Description                                                        | Reason
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Training Program Catalog Creation                | NO       | NO         | Admin creates a new training program in the catalog. A UI success  | Catalog setup is a backend administrative action with no employee impact at
+                                                   |          |            | state is sufficient — no employees are assigned yet.               | this stage. Notifications here would be premature and serve no purpose.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Training Program Assignment                      | YES      | YES        | Assigned employee receives an in-app dashboard notification and an | Employees need to know about learning obligations in advance. Email provides
+                                                   |          |            | email with program details, scheduled start date, duration, and    | a persistent reference they can revisit before training begins — standard in
+                                                   |          |            | any preparation materials or links.                                | Coursera for Teams, LinkedIn Learning, and Cornerstone.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Training Status Update / Completion              | YES      | YES        | When an assignment is marked Completed or Passed, the employee     | Completion emails serve as permanent records for the employee's professional
+                                                   |          |            | receives an in-app notification and a completion confirmation      | development portfolio. Many organisations require documented proof of
+                                                   |          |            | email — which can carry a certificate or performance summary.      | training for compliance (ISO, safety certs, GDPR). Email creates that
+                                                   |          |            |                                                                    | auditable paper trail.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Upcoming Training Reminder (48h before) [NEW]    | YES      | YES        | Automated reminder sent 48 hours before a scheduled training start | Employees frequently forget training assigned days or weeks in advance. A
+                                                   |          |            | date — in-app notification and email with program details, timing, | timely reminder dramatically improves attendance and completion rates —
+                                                   |          |            | and any pre-read materials.                                        | standard in all LMS platforms and a recognised UX quality signal for modern
+                                                   |          |            |                                                                    | HRMS.
+  ·················································┼··········┼············┼····································································┼·············································································
+
+  ▌ ASSETS & COMPLIANCE
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Feature / Action                                 | In-App   | Email      | Description                                                        | Reason
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Asset / Compliance Checklist Update              | YES      | NO         | When HR or IT updates the employee's asset allocation or statutory | Employees need visibility into their benefits and asset status. In-app is
+                                                   |          |            | compliance status (PF, Mediclaim, equipment), the employee         | sufficient — this is a routine administrative update that doesn't require
+                                                   |          |            | receives an in-app notification with updated details.              | urgent out-of-platform action from the employee.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Physical Asset Handover / Receipt Confirmation   | YES      | YES        | When a physical asset (laptop, badge, access card) is assigned,    | Asset handover has legal and audit implications. The email serves as a
+                                                   |          |            | the employee receives an in-app notification and an email that     | formal, timestamped acknowledgement. Enterprise IT tools (ServiceNow,
+                                                   |          |            | acts as a digital receipt — containing asset details and           | Freshservice) always generate email receipts for hardware — a compliance
+                                                   |          |            | requesting acknowledgement.                                        | requirement in most organisations.
+  ·················································┼··········┼············┼····································································┼·············································································
+
+  ▌ SYSTEM & ACCOUNT
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Feature / Action                                 | In-App   | Email      | Description                                                        | Reason
+  ─────────────────────────────────────────────────┼──────────┼────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+  Password Reset / First-Login Setup [NEW]         | NO       | YES        | When an admin creates an account directly (not via onboarding      | Universal security requirement for all SaaS platforms. Without this,
+                                                   |          |            | flow), a secure password setup email is dispatched automatically   | directly-created accounts are inaccessible to the employee. Not optional —
+                                                   |          |            | with a time-limited one-time link for the employee to set their    | it is the fundamental access mechanism for any user created outside the
+                                                   |          |            | password.                                                          | onboarding flow.
+  ·················································┼··········┼············┼····································································┼·············································································
+  Probation Period Completion Reminder [NEW]       | YES      | YES        | A scheduled automated reminder fires 30 days before an employee's  | Missing probation deadlines is one of the most common HR compliance failures
+                                                   |          |            | probation end date, alerting HR admin via in-app notification and  | in growing organisations. Automated reminders ensure no employee remains on
+                                                   |          |            | email to initiate confirmation, extension, or termination.         | probation indefinitely — present in SuccessFactors, Workday, Darwinbox, and
+                                                   |          |            |                                                                    | Keka.
+  ·················································┼··········┼············┼····································································┼·············································································
+
+============================================================================================================================================================================================================================
+  LEGEND:
+  [NEW]    = Feature/action added in this revision based on SaaS & HR industry best practices
+  OPTIONAL = Nice-to-have; UI confirmation may substitute — low implementation priority
+  YES      = Notification required
+  NO       = Notification not needed — UI feedback is sufficient
+============================================================================================================================================================================================================================
+
+  CHANGES FROM PREVIOUS VERSION:
+  [CHANGED]  Admin Profile Edit            Email: NO  → YES   (security signal for out-of-band alerting)
+  [CHANGED]  Training Completion            Email: NO  → YES   (compliance / LMS industry standard)
+  [CHANGED]  Physical Asset Handover        Email: NO  → YES   (legal receipt & audit trail)
+  [CHANGED]  Onboarding Form Completion     Email: YES → OPTIONAL  (candidate already sees success screen)
+  [SPLIT]    Attendance Correction Action   Split into Approved (no email) + Rejected (email w/ reason)
+  [ADDED]    Leave Balance Warning          (proactive UX — BambooHR / Keka standard)
+  [ADDED]    Unplanned Absence Alert        (manager welfare check — Darwinbox / Keka / Zoho People)
+  [ADDED]    Upcoming Training Reminder     (48h LMS standard — all major LMS platforms)
+  [ADDED]    Password Reset / First-Login   (universal SaaS security requirement)
+  [ADDED]    Probation Period Reminder      (HR compliance — Workday / Darwinbox / Keka)
+============================================================================================================================================================================================================================

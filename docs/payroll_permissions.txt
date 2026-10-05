@@ -1,0 +1,14 @@
+Visibility
+- deploy.payroll.view_personal
+- deploy.payroll.view_all
+
+Management & Execution
+- deploy.payroll.run_payroll
+- deploy.payroll.edit_records
+- deploy.payroll.upload_bulk
+
+Approvals
+- deploy.payroll.approve
+
+Reporting & Exports
+- deploy.payroll.export_reports

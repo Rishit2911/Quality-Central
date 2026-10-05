@@ -1,0 +1,24 @@
+.particles-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 0; /* Keep it strictly in the background */
+    pointer-events: none; /* Let clicks pass through */
+}
+
+.particle {
+    position: absolute;
+    background-color: #ffffff;
+    border-radius: 50%;
+    animation: twinkle floatZ infinite alternate ease-in-out;
+    filter: blur(1px);
+}
+
+@keyframes twinkle {
+    0% { transform: scale(0.8) translateY(0); opacity: 0.1; }
+    50% { transform: scale(1.5) translateY(-20px); opacity: 0.8; box-shadow: 0 0 10px rgba(255, 255, 255, 0.8); }
+    100% { transform: scale(0.5) translateY(-40px); opacity: 0; }
+}
