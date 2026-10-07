@@ -3,14 +3,22 @@ import {
   X, ExternalLink, Calendar, User, Shield, AlertTriangle, 
   Layers, Tag, CheckCircle2, Lock, Eye, Download, Play, 
   ZoomIn, ZoomOut, RotateCcw, Image as ImageIcon, Video as VideoIcon,
-  Maximize2
+  Maximize2, Clock
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 // Demo Error Screenshot provided by user
 import demoErrorScreenshot from '../../../assets/demo_error_screenshot.png';
 
-export default function BugDetailsModal({ bug, onClose, onEdit, onStatusChange, onTriggerSubmitDebug, currentUser = 'Rishit' }) {
+export default function BugDetailsModal({ 
+  bug, 
+  onClose, 
+  onEdit, 
+  onStatusChange, 
+  onTriggerSubmitDebug, 
+  onOpenTimeline,
+  currentUser = 'Rishit' 
+}) {
   const [currentStatus, setCurrentStatus] = useState(bug?.status || 'Open');
   const [activeMedia, setActiveMedia] = useState(null); // { id, name, type, url, size, isVideo }
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -444,6 +452,19 @@ export default function BugDetailsModal({ bug, onClose, onEdit, onStatusChange, 
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose?.();
+                  onOpenTimeline?.(bug);
+                }}
+                className="px-3.5 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                title="View complete chronological audit trail"
+              >
+                <Clock size={13} className="text-blue-600" />
+                <span>Audit Timeline</span>
+              </button>
+
               <button
                 onClick={onClose}
                 className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"

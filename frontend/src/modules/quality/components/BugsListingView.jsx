@@ -4,10 +4,11 @@ import {
   CheckSquare, Square, ChevronRight, ChevronLeft, 
   Layers, User, Calendar, Check, MoreVertical, X,
   LayoutGrid, List as ListIcon, ShieldAlert, CheckCircle2,
-  Send, CheckCheck, Lock, Eye, Download, FileText
+  Send, CheckCheck, Lock, Eye, Download, FileText, Clock
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { exportBugsQueueXLSX } from '../utils/qualityExport';
+import BugAuditTimelineDrawer from './BugAuditTimelineDrawer';
 
 export default function BugsListingView({
   bugs = [],
@@ -17,6 +18,7 @@ export default function BugsListingView({
   onDeleteBug,
   onUpdateBugStatus,
   onTriggerSubmitDebug,
+  onOpenTimeline,
   currentUser = 'Rishit',
   hiddenBugIds = [],
   initialProjectFilter = 'all',
@@ -26,6 +28,11 @@ export default function BugsListingView({
   scope: initialScope,
   onScopeChange
 }) {
+  const [timelineBug, setTimelineBug] = useState(null);
+  const handleOpenTimeline = (b) => {
+    setTimelineBug(b);
+    onOpenTimeline?.(b);
+  };
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'kanban'
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -839,16 +846,30 @@ export default function BugsListingView({
 
                         {/* Bug ID with SMART LINK styling matching Screenshot 1 */}
                         <td className="py-3.5 px-4 font-mono font-bold whitespace-nowrap">
-                          <button
-                            onClick={() => onViewBugDetails(bug)}
-                            className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 transition-colors font-bold group-hover:underline text-left cursor-pointer"
-                            title="Click to view details (Smart Link)"
-                          >
-                            <span>{bug.id}</span>
-                            <span className="text-[10px] px-1 py-0.5 rounded bg-blue-100 text-blue-700 opacity-90 group-hover:opacity-100 font-sans font-bold flex items-center gap-0.5">
-                              ↗
-                            </span>
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => onViewBugDetails(bug)}
+                              className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 transition-colors font-bold group-hover:underline text-left cursor-pointer"
+                              title="Click to view details (Smart Link)"
+                            >
+                              <span>{bug.id}</span>
+                              <span className="text-[10px] px-1 py-0.5 rounded bg-blue-100 text-blue-700 opacity-90 group-hover:opacity-100 font-sans font-bold flex items-center gap-0.5">
+                                ↗
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenTimeline(bug);
+                              }}
+                              className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
+                              title={`View Audit Timeline for ${bug.id}`}
+                              aria-label={`View Audit Timeline for ${bug.id}`}
+                            >
+                              <Clock size={13} className="text-slate-400 hover:text-blue-600" />
+                            </button>
+                          </div>
                         </td>
 
                         {/* Title */}
@@ -973,6 +994,20 @@ export default function BugsListingView({
                         {/* Actions (Done / Edit / Delete / View Details) */}
                         <td className="py-3.5 px-4 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
+                            {/* Audit Timeline Button */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenTimeline(bug);
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                              title={`View Audit Timeline for ${bug.id}`}
+                              aria-label={`View Audit Timeline for ${bug.id}`}
+                            >
+                              <Clock size={15} />
+                            </button>
+
                             {['resolved', 'closed'].includes((bug.status || '').toLowerCase()) ? (
                               <button
                                 type="button"
@@ -1177,33 +1212,47 @@ export default function BugsListingView({
                               </span>
                             </div>
 
-                            {/* Quick status controller - Editable ONLY by the assigned owner */}
-                            {canUserEdit(bug) ? (
-                              <select
-                                value={bug.status}
-                                onClick={(e) => e.stopPropagation()}
-                                onChange={(e) => onUpdateBugStatus(bug.id, e.target.value)}
-                                className="text-[10px] font-bold py-0.5 px-2 bg-white border border-violet-300 text-violet-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-violet-400 cursor-pointer shadow-2xs hover:bg-violet-50 transition-colors"
-                                title="Change status (You are the assignee)"
-                              >
-                                <option value="Open">Open</option>
-                                <option value="In Progress">In Progress</option>
-                                <option value="Resolved">Resolved</option>
-                                <option value="Closed">Closed</option>
-                              </select>
-                            ) : (
-                              <div 
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  toast.error(`Only ${bug.assignee || 'the assigned owner'} can change the status of this ticket.`);
+                                  handleOpenTimeline(bug);
                                 }}
-                                className="flex items-center gap-1 text-[10px] font-bold py-0.5 px-2 bg-slate-100 text-slate-500 rounded-lg border border-slate-200 cursor-not-allowed opacity-85 hover:bg-slate-200 transition-colors"
-                                title={`Read-only: Only ${bug.assignee} can edit or change status`}
+                                className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors cursor-pointer"
+                                title={`View Audit Timeline for ${bug.id}`}
                               >
-                                <Lock size={10} className="text-slate-400" />
-                                <span>{bug.status}</span>
-                              </div>
-                            )}
+                                <Clock size={12} />
+                              </button>
+
+                              {/* Quick status controller - Editable ONLY by the assigned owner */}
+                              {canUserEdit(bug) ? (
+                                <select
+                                  value={bug.status}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => onUpdateBugStatus(bug.id, e.target.value)}
+                                  className="text-[10px] font-bold py-0.5 px-2 bg-white border border-violet-300 text-violet-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-violet-400 cursor-pointer shadow-2xs hover:bg-violet-50 transition-colors"
+                                  title="Change status (You are the assignee)"
+                                >
+                                  <option value="Open">Open</option>
+                                  <option value="In Progress">In Progress</option>
+                                  <option value="Resolved">Resolved</option>
+                                  <option value="Closed">Closed</option>
+                                </select>
+                              ) : (
+                                <div 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toast.error(`Only ${bug.assignee || 'the assigned owner'} can change the status of this ticket.`);
+                                  }}
+                                  className="flex items-center gap-1 text-[10px] font-bold py-0.5 px-2 bg-slate-100 text-slate-500 rounded-lg border border-slate-200 cursor-not-allowed opacity-85 hover:bg-slate-200 transition-colors"
+                                  title={`Read-only: Only ${bug.assignee} can edit or change status`}
+                                >
+                                  <Lock size={10} className="text-slate-400" />
+                                  <span>{bug.status}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
@@ -1215,6 +1264,14 @@ export default function BugsListingView({
           })}
         </div>
       )}
+
+      {/* Bug Audit Timeline Slide-over Drawer */}
+      <BugAuditTimelineDrawer
+        isOpen={Boolean(timelineBug)}
+        bug={timelineBug}
+        onClose={() => setTimelineBug(null)}
+        currentUser={currentUser}
+      />
     </div>
   );
 }

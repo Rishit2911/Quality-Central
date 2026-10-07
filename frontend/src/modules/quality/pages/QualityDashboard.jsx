@@ -29,6 +29,7 @@ import BugsListingView from '../components/BugsListingView';
 import CreateNewBugView from '../components/CreateNewBugView';
 import BugDetailsModal from '../components/BugDetailsModal';
 import SubmitDebuggingModal from '../components/SubmitDebuggingModal';
+import BugAuditTimelineDrawer from '../components/BugAuditTimelineDrawer';
 import ProjectsListingView from '../components/ProjectsListingView';
 import { INITIAL_SAMPLE_PROJECTS, getBugPrefixForProject } from '../constants/defaultProjects';
 import { QUALITY_CENTRAL_TEAM } from '../constants/teamPool';
@@ -283,6 +284,7 @@ export default function QualityDashboard() {
   const [editingBug, setEditingBug] = useState(null);
   const [submitDebugModalOpen, setSubmitDebugModalOpen] = useState(false);
   const [targetBugsForDebug, setTargetBugsForDebug] = useState([]);
+  const [timelineDrawerBug, setTimelineDrawerBug] = useState(null);
   const [hiddenBugIds, setHiddenBugIds] = useState(() => {
     try {
       localStorage.removeItem('qc_hidden_bug_ids');
@@ -1232,6 +1234,7 @@ export default function QualityDashboard() {
                   hiddenBugIds={hiddenBugIds}
                   scope={dashboardScope}
                   onScopeChange={setDashboardScope}
+                  onOpenTimeline={(bug) => setTimelineDrawerBug(bug)}
                 />
               )}
             </>
@@ -1261,6 +1264,7 @@ export default function QualityDashboard() {
             setTargetBugsForDebug(targetBugs);
             setSubmitDebugModalOpen(true);
           }}
+          onOpenTimeline={(bug) => setTimelineDrawerBug(bug)}
         />
       )}
 
@@ -1275,6 +1279,16 @@ export default function QualityDashboard() {
           }}
           onSubmit={handleSubmitDebugging}
           currentUserName={displayName.split('@')[0]}
+        />
+      )}
+
+      {/* GLOBAL BUG AUDIT TIMELINE DRAWER */}
+      {timelineDrawerBug && (
+        <BugAuditTimelineDrawer
+          isOpen={Boolean(timelineDrawerBug)}
+          bug={timelineDrawerBug}
+          onClose={() => setTimelineDrawerBug(null)}
+          currentUser={displayName.split('@')[0]}
         />
       )}
     </div>

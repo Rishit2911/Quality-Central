@@ -1406,10 +1406,24 @@ def create_tables(schema_name='public'):
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+
+            CREATE TABLE IF NOT EXISTS quality_bug_timeline (
+                id SERIAL PRIMARY KEY,
+                bug_id VARCHAR(50) NOT NULL,
+                actor_name VARCHAR(150) NOT NULL,
+                actor_role VARCHAR(100),
+                event_type VARCHAR(100) NOT NULL,
+                field_name VARCHAR(100),
+                old_value TEXT,
+                new_value TEXT,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         ''')
         cur.execute("CREATE INDEX IF NOT EXISTS idx_quality_bugs_assignee ON quality_bugs(assignee)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_quality_bugs_status ON quality_bugs(status)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_quality_projects_prefix ON quality_projects(prefix)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_quality_bug_timeline_bug_id ON quality_bug_timeline(bug_id)")
 
         conn.commit()
     except Exception as e:

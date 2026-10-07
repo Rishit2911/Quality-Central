@@ -151,6 +151,117 @@ def add_db_activity(user_name: str, avatar: str, text: str, tenant_id: str = "pu
     finally:
         conn.close()
 
+def log_bug_timeline_event(
+    cur,
+    bug_id: str,
+    actor_name: str,
+    event_type: str,
+    field_name: Optional[str] = None,
+    old_value: Optional[str] = None,
+    new_value: Optional[str] = None,
+    notes: Optional[str] = None,
+    actor_role: Optional[str] = None
+):
+    """Inserts a structured timeline event into quality_bug_timeline."""
+    try:
+        cur.execute("""
+            INSERT INTO quality_bug_timeline (
+                bug_id, actor_name, actor_role, event_type, field_name, old_value, new_value, notes, created_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+        """, (
+            bug_id.strip(),
+            actor_name.strip(),
+            actor_role,
+            event_type,
+            field_name,
+            str(old_value) if old_value is not None else None,
+            str(new_value) if new_value is not None else None,
+            notes
+        ))
+    except Exception as e:
+        print(f"[TimelineLog] Warning: failed to record timeline event for {bug_id}: {e}")
+
+def get_db_bug_timeline(bug_id: str, tenant_id: str = "public") -> List[Dict[str, Any]]:
+    """Fetches all timeline events for a given bug ticket, auto-seeding baseline history if none exists."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(f'SET search_path TO "{tenant_id}"')
+            cur.execute("""
+                SELECT id, bug_id, actor_name, actor_role, event_type,
+                       field_name, old_value, new_value, notes, created_at,
+                       TO_CHAR(created_at, 'DD Mon YYYY, HH12:MI AM') as formatted_time
+                FROM quality_bug_timeline
+                WHERE LOWER(bug_id) = LOWER(%s)
+                ORDER BY created_at DESC, id DESC
+            """, (bug_id.strip(),))
+            rows = cur.fetchall()
+            events = [dict(r) for r in rows]
+
+            # If no history exists yet for this bug, synthesize baseline timeline entries from quality_bugs
+            if not events:
+                cur.execute("SELECT * FROM quality_bugs WHERE LOWER(id) = LOWER(%s)", (bug_id.strip(),))
+                b = cur.fetchone()
+                if b:
+                    b_dict = dict(b)
+                    reporter = b_dict.get("reported_by") or "Reporter"
+                    created_at_val = b_dict.get("created_at") or datetime.now()
+
+                    # Baseline 1: Creation
+                    cur.execute("""
+                        INSERT INTO quality_bug_timeline (
+                            bug_id, actor_name, actor_role, event_type, field_name, old_value, new_value, notes, created_at
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (
+                        b_dict["id"], reporter, "QA", "CREATED", "status", None, "Open",
+                        f"Bug logged under {b_dict.get('project', 'Quality Central')} ({b_dict.get('module', 'General')}) with priority {b_dict.get('priority', 'Normal')}",
+                        created_at_val
+                    ))
+
+                    # Baseline 2: Assignment if assigned
+                    if b_dict.get("assignee") and b_dict.get("assignee") != "Unassigned":
+                        cur.execute("""
+                            INSERT INTO quality_bug_timeline (
+                                bug_id, actor_name, actor_role, event_type, field_name, old_value, new_value, notes, created_at
+                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """, (
+                            b_dict["id"], "System Lead", "Lead", "ASSIGNMENT", "assignee", "Unassigned", b_dict["assignee"],
+                            f"Assigned defect to {b_dict['assignee']}",
+                            created_at_val
+                        ))
+
+                    # Baseline 3: Resolution if resolved
+                    if b_dict.get("resolved_by") or b_dict.get("status") in ("Resolved", "Closed"):
+                        resolver = b_dict.get("resolved_by") or b_dict.get("assignee") or "Developer"
+                        cur.execute("""
+                            INSERT INTO quality_bug_timeline (
+                                bug_id, actor_name, actor_role, event_type, field_name, old_value, new_value, notes, created_at
+                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """, (
+                            b_dict["id"], resolver, "Developer", "FIX_SUBMITTED", "status", "In Progress", b_dict.get("status", "Resolved"),
+                            b_dict.get("debugging_notes") or "Fix deployed and verified by developer.",
+                            b_dict.get("updated_at") or datetime.now()
+                        ))
+
+                    conn.commit()
+
+                    cur.execute("""
+                        SELECT id, bug_id, actor_name, actor_role, event_type,
+                               field_name, old_value, new_value, notes, created_at,
+                               TO_CHAR(created_at, 'DD Mon YYYY, HH12:MI AM') as formatted_time
+                        FROM quality_bug_timeline
+                        WHERE LOWER(bug_id) = LOWER(%s)
+                        ORDER BY created_at DESC, id DESC
+                    """, (bug_id.strip(),))
+                    events = [dict(r) for r in cur.fetchall()]
+
+            return events
+    except Exception as e:
+        print(f"[QualityDB] Error fetching timeline for {bug_id}: {e}")
+        return []
+    finally:
+        conn.close()
+
 # ============================================================================
 # SCHEMAS
 # ============================================================================
@@ -488,6 +599,32 @@ def create_bug(
                     new_bug["expected_result"], new_bug["actual_result"],
                     json.dumps(new_bug["attachments"])
                 ))
+
+                # Log creation in quality_bug_timeline
+                log_bug_timeline_event(
+                    cur,
+                    bug_id=new_bug["id"],
+                    actor_name=actor,
+                    actor_role="QA / Reporter",
+                    event_type="CREATED",
+                    field_name="status",
+                    old_value=None,
+                    new_value=new_bug["status"],
+                    notes=f"Logged bug under {new_bug['project']} ({new_bug['module']}) with {new_bug['priority']} priority and {new_bug['severity']} severity."
+                )
+                if new_bug.get("assignee") and new_bug["assignee"] != "Unassigned":
+                    log_bug_timeline_event(
+                        cur,
+                        bug_id=new_bug["id"],
+                        actor_name=actor,
+                        actor_role="Lead",
+                        event_type="ASSIGNMENT",
+                        field_name="assignee",
+                        old_value="Unassigned",
+                        new_value=new_bug["assignee"],
+                        notes=f"Assigned defect to {new_bug['assignee']}"
+                    )
+
                 created_bugs.append(new_bug)
 
             conn.commit()
@@ -589,6 +726,71 @@ def update_bug(
         with conn.cursor() as cur:
             cur.execute(f'SET search_path TO "{tenant_id}"')
             cur.execute(sql, tuple(params))
+
+            # Detect differences and record structured timeline events
+            if "status" in update_data and update_data["status"] != target_bug.get("status"):
+                log_bug_timeline_event(
+                    cur,
+                    bug_id=target_bug["id"],
+                    actor_name=actor,
+                    actor_role=user.get("role", "Developer"),
+                    event_type="STATUS_CHANGE",
+                    field_name="status",
+                    old_value=target_bug.get("status"),
+                    new_value=update_data["status"],
+                    notes=f"Status transitioned from {target_bug.get('status')} to {update_data['status']}"
+                )
+            if "assignee" in update_data and update_data["assignee"] != target_bug.get("assignee"):
+                log_bug_timeline_event(
+                    cur,
+                    bug_id=target_bug["id"],
+                    actor_name=actor,
+                    actor_role=user.get("role", "Lead"),
+                    event_type="ASSIGNMENT",
+                    field_name="assignee",
+                    old_value=target_bug.get("assignee", "Unassigned"),
+                    new_value=update_data["assignee"],
+                    notes=f"Reassigned from {target_bug.get('assignee', 'Unassigned')} to {update_data['assignee']}"
+                )
+            if "priority" in update_data and update_data["priority"] != target_bug.get("priority"):
+                log_bug_timeline_event(
+                    cur,
+                    bug_id=target_bug["id"],
+                    actor_name=actor,
+                    actor_role=user.get("role", "User"),
+                    event_type="PRIORITY_CHANGE",
+                    field_name="priority",
+                    old_value=target_bug.get("priority"),
+                    new_value=update_data["priority"],
+                    notes=f"Priority updated from {target_bug.get('priority')} to {update_data['priority']}"
+                )
+            if "severity" in update_data and update_data["severity"] != target_bug.get("severity"):
+                log_bug_timeline_event(
+                    cur,
+                    bug_id=target_bug["id"],
+                    actor_name=actor,
+                    actor_role=user.get("role", "User"),
+                    event_type="SEVERITY_CHANGE",
+                    field_name="severity",
+                    old_value=target_bug.get("severity"),
+                    new_value=update_data["severity"],
+                    notes=f"Severity updated from {target_bug.get('severity')} to {update_data['severity']}"
+                )
+
+            detail_fields = [k for k in update_data.keys() if k not in ("status", "assignee", "priority", "severity", "resolved_by", "resolved_at", "updated_at")]
+            if detail_fields:
+                log_bug_timeline_event(
+                    cur,
+                    bug_id=target_bug["id"],
+                    actor_name=actor,
+                    actor_role=user.get("role", "User"),
+                    event_type="DETAILS_EDITED",
+                    field_name=", ".join(detail_fields),
+                    old_value=None,
+                    new_value=None,
+                    notes=f"Updated defect details: {', '.join(detail_fields)}"
+                )
+
             conn.commit()
     finally:
         conn.close()
@@ -693,6 +895,18 @@ def submit_debugging_info(
                     bool(payload.remove_from_my_list),
                     b_id.strip()
                 ))
+
+                log_bug_timeline_event(
+                    cur,
+                    bug_id=b_id.strip(),
+                    actor_name=actor,
+                    actor_role="Developer",
+                    event_type="FIX_SUBMITTED",
+                    field_name="status",
+                    old_value="In Progress",
+                    new_value="Resolved",
+                    notes=f"Developer submitted fix & handed off to QA tester {payload.tester}:\n• Notes: {payload.debugging_notes}\n• Verification: {payload.verification_steps or 'Standard QA validation'}"
+                )
             conn.commit()
     finally:
         conn.close()
@@ -710,6 +924,77 @@ def submit_debugging_info(
         "message": f"Submitted {len(updated_bugs)} bug(s) to QA tester {payload.tester}.",
         "updated_bugs": updated_bugs,
         "updated_dashboard": compute_dashboard_metrics(user_filter=user_filter, tenant_id=tenant_id)
+    }
+
+def get_user_or_default(request: Request) -> Dict[str, Any]:
+    """Resolves authenticated session or falls back to standard public tenant admin context."""
+    try:
+        return get_current_user(request)
+    except Exception:
+        return {
+            "id": 1,
+            "username": "admin@phygitron.com",
+            "name": "Bhupesh",
+            "role": "org_admin",
+            "tenant_id": "public",
+            "employee_code": "EMP001"
+        }
+
+@router.get("/bugs/{bug_id}/timeline")
+def get_bug_timeline_api(
+    bug_id: str,
+    user: dict = Depends(get_user_or_default)
+) -> Dict[str, Any]:
+    """Retrieves full chronological audit timeline for a specific bug."""
+    tenant_id = user.get("tenant_id") or "public"
+    events = get_db_bug_timeline(bug_id, tenant_id=tenant_id)
+    return {
+        "success": True,
+        "bug_id": bug_id,
+        "total_events": len(events),
+        "events": events
+    }
+
+class TimelineNoteSchema(BaseModel):
+    notes: str = Field(..., min_length=1)
+    event_type: str = "AUDIT_NOTE"
+
+@router.post("/bugs/{bug_id}/timeline/notes")
+def add_bug_timeline_note_api(
+    bug_id: str,
+    payload: TimelineNoteSchema,
+    user: dict = Depends(get_user_or_default)
+) -> Dict[str, Any]:
+    """Adds a manual audit remark or note to the bug's timeline."""
+    tenant_id = user.get("tenant_id") or "public"
+    actor = (user.get("name") or user.get("username") or "User").split("@")[0].capitalize()
+    role = user.get("role") or "Member"
+    
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f'SET search_path TO "{tenant_id}"')
+            log_bug_timeline_event(
+                cur,
+                bug_id=bug_id,
+                actor_name=actor,
+                actor_role=role,
+                event_type=payload.event_type,
+                field_name="notes",
+                old_value=None,
+                new_value=None,
+                notes=payload.notes.strip()
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+    events = get_db_bug_timeline(bug_id, tenant_id=tenant_id)
+    return {
+        "success": True,
+        "message": "Audit note added to timeline successfully",
+        "total_events": len(events),
+        "events": events
     }
 
 # ============================================================================
@@ -1012,20 +1297,6 @@ def update_db_project(project_id: str, updates: Dict[str, Any], tenant_id: str =
         return None
     finally:
         conn.close()
-
-def get_user_or_default(request: Request) -> Dict[str, Any]:
-    """Resolves authenticated session or falls back to standard public tenant admin context."""
-    try:
-        return get_current_user(request)
-    except Exception:
-        return {
-            "id": 1,
-            "username": "admin@phygitron.com",
-            "name": "Bhupesh",
-            "role": "org_admin",
-            "tenant_id": "public",
-            "employee_code": "EMP001"
-        }
 
 @router.get("/projects")
 def get_quality_projects(user: dict = Depends(get_user_or_default)) -> Dict[str, Any]:
