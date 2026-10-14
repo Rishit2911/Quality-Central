@@ -31,6 +31,7 @@ import BugDetailsModal from '../components/BugDetailsModal';
 import SubmitDebuggingModal from '../components/SubmitDebuggingModal';
 import BugAuditTimelineDrawer from '../components/BugAuditTimelineDrawer';
 import ProjectsListingView from '../components/ProjectsListingView';
+import QualityChatbotModal from '../components/QualityChatbotModal';
 import { INITIAL_SAMPLE_PROJECTS, getBugPrefixForProject } from '../constants/defaultProjects';
 import { QUALITY_CENTRAL_TEAM } from '../constants/teamPool';
 import { 
@@ -1291,6 +1292,13 @@ export default function QualityDashboard() {
           currentUser={displayName.split('@')[0]}
         />
       )}
+
+      {/* GLOBAL QUALITY CENTRAL AI COPILOT CHATBOT */}
+      <QualityChatbotModal
+        currentUser={displayName}
+        projects={projects}
+        bugs={bugs}
+      />
     </div>
   );
 }

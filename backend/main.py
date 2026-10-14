@@ -4,7 +4,7 @@ import sys
 # Ensure root folder is on sys.path so 'backend.*' imports resolve
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
@@ -54,6 +54,8 @@ from backend.modules.lexai.api.files import router as lexai_files_router, alias_
 from backend.modules.lexai.api.voice import router as lexai_voice_router, alias_voice_router
 from backend.modules.lexai.api.sop import router as lexai_sop_router, alias_sop_router
 from backend.modules.quality.api.dashboard import router as quality_router
+from backend.modules.quality.api.chatbot import router as quality_chatbot_router
+from backend.core.error_logger import log_server_error
 
 app = FastAPI(
     title="PHYGITRON 360",
@@ -73,6 +75,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Automatic Terminal / Server Error Capture to Date Log Files
+@app.middleware("http")
+async def server_error_capture_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        import traceback
+        tb_str = traceback.format_exc()
+        user_id = getattr(request.state, "user", {}).get("username") if hasattr(request.state, "user") else None
+        err_meta = log_server_error(
+            error_message=str(exc),
+            traceback_str=tb_str,
+            endpoint=request.url.path,
+            method=request.method,
+            user_identifier=user_id
+        )
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "Internal Server Error",
+                "message": str(exc),
+                "error_id": err_meta.get("error_id")
+            }
+        )
 
 # Global API Response
 @app.get("/api/health")
@@ -264,8 +291,9 @@ app.include_router(alias_voice_router, dependencies=[Depends(require_module("lex
 app.include_router(lexai_sop_router, dependencies=[Depends(require_module("lexai"))])
 app.include_router(alias_sop_router, dependencies=[Depends(require_module("lexai"))])
 
-# Quality Central Router
+# Quality Central Routers
 app.include_router(quality_router)
+app.include_router(quality_chatbot_router)
 
 
 if __name__ == "__main__":
