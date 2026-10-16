@@ -4,7 +4,7 @@ import {
   CheckSquare, Square, ChevronRight, ChevronLeft, 
   Layers, User, Calendar, Check, MoreVertical, X,
   LayoutGrid, List as ListIcon, ShieldAlert, CheckCircle2,
-  Send, CheckCheck, Lock, Eye, Download, FileText, Clock
+  Send, CheckCheck, Lock, Eye, Download, FileText, Clock, ArrowRightLeft
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { exportBugsQueueXLSX } from '../utils/qualityExport';
@@ -18,6 +18,7 @@ export default function BugsListingView({
   onDeleteBug,
   onUpdateBugStatus,
   onTriggerSubmitDebug,
+  onTriggerReassignBug,
   onOpenTimeline,
   currentUser = 'Rishit',
   hiddenBugIds = [],
@@ -69,7 +70,7 @@ export default function BugsListingView({
     const myShort = myName.includes('@') ? myName.split('@')[0] : myName;
 
     // Superadmin / admin has universal permissions
-    if (myShort === 'admin' || myName.includes('admin')) return true;
+    if (myShort === 'admin' || myName.includes('admin') || myShort.includes('bhupesh')) return true;
 
     if (!bug.assignee) return true; // Unassigned bugs can be claimed/edited
     const bugAssignee = String(bug.assignee).toLowerCase().trim();
@@ -698,6 +699,24 @@ export default function BugsListingView({
                 <CheckCircle2 size={16} strokeWidth={2.5} />
                 <span>Done (Submit to Tester)</span>
               </button>
+              {onTriggerReassignBug && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const targets = bugs.filter(b => selectedBugIds.includes(b.id));
+                    if (targets.length === 0) {
+                      toast.error('Please select at least one bug to reassign.');
+                      return;
+                    }
+                    onTriggerReassignBug(targets);
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
+                  title="Reassign selected bugs to another developer as per project"
+                >
+                  <ArrowRightLeft size={15} strokeWidth={2.5} />
+                  <span>Reassign</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -738,6 +757,24 @@ export default function BugsListingView({
                 <CheckCircle2 size={16} strokeWidth={2.5} />
                 <span>Done (Submit to Tester)</span>
               </button>
+              {onTriggerReassignBug && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const targets = bugs.filter(b => selectedBugIds.includes(b.id));
+                    if (targets.length === 0) {
+                      toast.error('Please select at least one bug to reassign.');
+                      return;
+                    }
+                    onTriggerReassignBug(targets);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 active:scale-95 text-white text-xs font-extrabold rounded-xl shadow-[0_4px_16px_rgba(99,102,241,0.35)] transition-all cursor-pointer whitespace-nowrap"
+                  title="Reassign selected bugs to another developer as per project"
+                >
+                  <ArrowRightLeft size={16} strokeWidth={2.5} />
+                  <span>Reassign</span>
+                </button>
+              )}
             </div>
           </div>
         </>
@@ -1032,6 +1069,20 @@ export default function BugsListingView({
                                   <CheckCircle2 size={13} strokeWidth={2.5} />
                                   <span>Done</span>
                                 </button>
+                                {onTriggerReassignBug && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onTriggerReassignBug([bug]);
+                                    }}
+                                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-700 border border-indigo-200 rounded-lg transition-all flex items-center gap-1.5 font-bold text-[11px] shadow-xs cursor-pointer hover:shadow-sm"
+                                    title={`Reassign ${bug.id} to another developer on ${bug.project}`}
+                                  >
+                                    <ArrowRightLeft size={13} strokeWidth={2.5} />
+                                    <span>Reassign</span>
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => onEditBug(bug)}
                                   className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
@@ -1224,6 +1275,20 @@ export default function BugsListingView({
                               >
                                 <Clock size={12} />
                               </button>
+
+                              {!['resolved', 'closed'].includes((bug.status || '').toLowerCase()) && canUserEdit(bug) && onTriggerReassignBug && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onTriggerReassignBug([bug]);
+                                  }}
+                                  className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors cursor-pointer"
+                                  title={`Reassign ${bug.id} to another developer on ${bug.project}`}
+                                >
+                                  <ArrowRightLeft size={12} />
+                                </button>
+                              )}
 
                               {/* Quick status controller - Editable ONLY by the assigned owner */}
                               {canUserEdit(bug) ? (

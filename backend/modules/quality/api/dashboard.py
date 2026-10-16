@@ -305,6 +305,19 @@ class SubmitDebugSchema(BaseModel):
     environment: Optional[str] = "Staging"
     remove_from_my_list: Optional[bool] = True
 
+class BugReassignSchema(BaseModel):
+    new_assignee: str = Field(..., min_length=1)
+    reason: Optional[str] = "Developer requested reassignment"
+    notes: Optional[str] = ""
+    remove_from_my_list: Optional[bool] = True
+
+class BugBatchReassignSchema(BaseModel):
+    bug_ids: List[str] = Field(..., min_items=1)
+    new_assignee: str = Field(..., min_length=1)
+    reason: Optional[str] = "Developer requested reassignment"
+    notes: Optional[str] = ""
+    remove_from_my_list: Optional[bool] = True
+
 class ProjectCreateSchema(BaseModel):
     name: str = Field(..., min_length=2)
     prefix: str
@@ -922,6 +935,154 @@ def submit_debugging_info(
     return {
         "success": True,
         "message": f"Submitted {len(updated_bugs)} bug(s) to QA tester {payload.tester}.",
+        "updated_bugs": updated_bugs,
+        "updated_dashboard": compute_dashboard_metrics(user_filter=user_filter, tenant_id=tenant_id)
+    }
+
+@router.post("/bugs/{bug_id}/reassign")
+def reassign_bug(
+    bug_id: str,
+    payload: BugReassignSchema,
+    scope: str = Query("personal"),
+    user: dict = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """Reassigns a bug ticket to another developer as per project team with handoff reason and notes."""
+    tenant_id = user.get("tenant_id") or "public"
+    user_name = user.get("name") or user.get("username") or "Rishit"
+    target_bug = get_db_bug_by_id(bug_id, tenant_id=tenant_id)
+    
+    if not target_bug:
+        raise HTTPException(status_code=404, detail=f"Bug ticket {bug_id} not found")
+
+    actor = (user.get("name") or user.get("username") or "User").split("@")[0].capitalize()
+    is_owner = is_bug_assigned_to_user(target_bug, user_name)
+    user_role = (user.get("role") or "").lower()
+    is_admin_or_lead = user_role in ("super_admin", "org_admin", "manager", "admin") or actor.lower() in ("bhupesh", "admin")
+    
+    if not (is_owner or is_admin_or_lead or not target_bug.get("assignee") or target_bug.get("assignee") == "Unassigned"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: Only {target_bug.get('assignee', 'the assigned developer')} or team lead can reassign ticket {bug_id}."
+        )
+
+    old_assignee = target_bug.get("assignee") or "Unassigned"
+    new_assignee = payload.new_assignee.strip()
+    reason = (payload.reason or "Developer requested reassignment").strip()
+    notes = (payload.notes or "").strip()
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f'SET search_path TO "{tenant_id}"')
+            cur.execute("""
+                UPDATE quality_bugs
+                SET assignee = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE LOWER(id) = LOWER(%s)
+            """, (new_assignee, bug_id.strip()))
+
+            timeline_notes = f"Reassigned from {old_assignee} to {new_assignee} as per {target_bug.get('project', 'project')} team."
+            if reason:
+                timeline_notes += f"\n• Reason: {reason}"
+            if notes:
+                timeline_notes += f"\n• Handoff Notes: {notes}"
+
+            log_bug_timeline_event(
+                cur,
+                bug_id=target_bug["id"],
+                actor_name=actor,
+                actor_role=user.get("role", "Developer"),
+                event_type="REASSIGNMENT",
+                field_name="assignee",
+                old_value=old_assignee,
+                new_value=new_assignee,
+                notes=timeline_notes
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+    add_db_activity(actor, actor[:2].upper(), f"{actor} reassigned {target_bug['id']} to {new_assignee} ({reason}).", tenant_id=tenant_id)
+
+    updated_bug = get_db_bug_by_id(bug_id, tenant_id=tenant_id)
+    user_filter = user_name if scope == "personal" else None
+    return {
+        "success": True,
+        "message": f"Bug {bug_id} successfully reassigned to {new_assignee}.",
+        "bug": updated_bug,
+        "updated_dashboard": compute_dashboard_metrics(user_filter=user_filter, tenant_id=tenant_id)
+    }
+
+@router.post("/bugs/reassign-batch")
+def reassign_bugs_batch(
+    payload: BugBatchReassignSchema,
+    scope: str = Query("personal"),
+    user: dict = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """Reassigns a batch of bugs to a developer as per project team with handoff reason and notes."""
+    tenant_id = user.get("tenant_id") or "public"
+    user_name = user.get("name") or user.get("username") or "Rishit"
+    actor = (user.get("name") or user.get("username") or "User").split("@")[0].capitalize()
+    user_role = (user.get("role") or "").lower()
+    is_admin_or_lead = user_role in ("super_admin", "org_admin", "manager", "admin") or actor.lower() in ("bhupesh", "admin")
+
+    target_ids = payload.bug_ids or []
+    new_assignee = payload.new_assignee.strip()
+    reason = (payload.reason or "Developer requested reassignment").strip()
+    notes = (payload.notes or "").strip()
+    updated_bugs = []
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f'SET search_path TO "{tenant_id}"')
+            for b_id in target_ids:
+                b = get_db_bug_by_id(b_id, tenant_id=tenant_id)
+                if not b:
+                    continue
+                if not (is_admin_or_lead or is_bug_assigned_to_user(b, user_name)):
+                    continue
+
+                old_assignee = b.get("assignee") or "Unassigned"
+                cur.execute("""
+                    UPDATE quality_bugs
+                    SET assignee = %s,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE LOWER(id) = LOWER(%s)
+                """, (new_assignee, b_id.strip()))
+
+                timeline_notes = f"Reassigned from {old_assignee} to {new_assignee} as per {b.get('project', 'project')} team."
+                if reason:
+                    timeline_notes += f"\n• Reason: {reason}"
+                if notes:
+                    timeline_notes += f"\n• Handoff Notes: {notes}"
+
+                log_bug_timeline_event(
+                    cur,
+                    bug_id=b["id"],
+                    actor_name=actor,
+                    actor_role=user.get("role", "Developer"),
+                    event_type="REASSIGNMENT",
+                    field_name="assignee",
+                    old_value=old_assignee,
+                    new_value=new_assignee,
+                    notes=timeline_notes
+                )
+            conn.commit()
+    finally:
+        conn.close()
+
+    for b_id in target_ids:
+        b = get_db_bug_by_id(b_id, tenant_id=tenant_id)
+        if b and b.get("assignee") == new_assignee:
+            updated_bugs.append(b)
+
+    add_db_activity(actor, actor[:2].upper(), f"{actor} reassigned {len(updated_bugs)} bug(s) to {new_assignee} ({reason}).", tenant_id=tenant_id)
+
+    user_filter = user_name if scope == "personal" else None
+    return {
+        "success": True,
+        "message": f"Successfully reassigned {len(updated_bugs)} bug(s) to {new_assignee}.",
         "updated_bugs": updated_bugs,
         "updated_dashboard": compute_dashboard_metrics(user_filter=user_filter, tenant_id=tenant_id)
     }

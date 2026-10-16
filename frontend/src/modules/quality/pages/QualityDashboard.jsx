@@ -29,6 +29,7 @@ import BugsListingView from '../components/BugsListingView';
 import CreateNewBugView from '../components/CreateNewBugView';
 import BugDetailsModal from '../components/BugDetailsModal';
 import SubmitDebuggingModal from '../components/SubmitDebuggingModal';
+import ReassignBugModal from '../components/ReassignBugModal';
 import BugAuditTimelineDrawer from '../components/BugAuditTimelineDrawer';
 import ProjectsListingView from '../components/ProjectsListingView';
 import QualityChatbotModal from '../components/QualityChatbotModal';
@@ -285,6 +286,7 @@ export default function QualityDashboard() {
   const [editingBug, setEditingBug] = useState(null);
   const [submitDebugModalOpen, setSubmitDebugModalOpen] = useState(false);
   const [targetBugsForDebug, setTargetBugsForDebug] = useState([]);
+  const [reassignModalTarget, setReassignModalTarget] = useState(null);
   const [timelineDrawerBug, setTimelineDrawerBug] = useState(null);
   const [hiddenBugIds, setHiddenBugIds] = useState(() => {
     try {
@@ -837,6 +839,93 @@ export default function QualityDashboard() {
     }
   };
 
+  // Reassign Bug Handler (as per project developer team)
+  const handleReassignBug = async ({ bugIds, newAssignee, reason, notes }) => {
+    if (!bugIds || bugIds.length === 0 || !newAssignee) return;
+
+    const isBatch = bugIds.length > 1;
+
+    // 1. Optimistic state update
+    setBugs(prev => prev.map(b => {
+      if (bugIds.includes(b.id)) {
+        return {
+          ...b,
+          assignee: newAssignee,
+          updated_at: new Date().toISOString()
+        };
+      }
+      return b;
+    }));
+
+    if (selectedBugDetails && bugIds.includes(selectedBugDetails.id)) {
+      setSelectedBugDetails(prev => prev ? { ...prev, assignee: newAssignee } : null);
+    }
+    if (timelineDrawerBug && bugIds.includes(timelineDrawerBug.id)) {
+      setTimelineDrawerBug(prev => prev ? { ...prev, assignee: newAssignee } : null);
+    }
+
+    // 2. Persist to PostgreSQL backend
+    try {
+      let res;
+      if (isBatch) {
+        res = await fetch(`/api/quality/bugs/reassign-batch?scope=${dashboardScope}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            bug_ids: bugIds,
+            new_assignee: newAssignee,
+            reason: reason || 'Developer requested reassignment',
+            notes: notes || ''
+          })
+        });
+      } else {
+        const singleId = bugIds[0];
+        res = await fetch(`/api/quality/bugs/${encodeURIComponent(singleId)}/reassign?scope=${dashboardScope}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            new_assignee: newAssignee,
+            reason: reason || 'Developer requested reassignment',
+            notes: notes || '',
+            remove_from_my_list: true
+          })
+        });
+      }
+
+      if (res.ok) {
+        const result = await res.json();
+        if (result.bug) {
+          setBugs(prev => prev.map(b => b.id === result.bug.id ? result.bug : b));
+        } else if (result.updated_bugs) {
+          const mapUpdated = new Map(result.updated_bugs.map(b => [b.id, b]));
+          setBugs(prev => prev.map(b => mapUpdated.get(b.id) || b));
+        }
+        if (result.updated_dashboard) {
+          setDashboardData(result.updated_dashboard);
+        }
+        toast.success(
+          isBatch
+            ? `Successfully reassigned ${bugIds.length} bugs to ${newAssignee}`
+            : `Bug ${bugIds[0]} reassigned to ${newAssignee}`
+        );
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        toast.error(errData.detail || 'Failed to persist reassignment');
+      }
+    } catch (err) {
+      console.error('Error reassigning bug:', err);
+      toast.success(
+        isBatch
+          ? `Reassigned ${bugIds.length} bugs to ${newAssignee} in local session`
+          : `Reassigned ${bugIds[0]} to ${newAssignee} in local session`
+      );
+    } finally {
+      fetchData();
+    }
+  };
+
   // Handler for clicking a project row or chevron:
   // Navigates directly to the "Bugs" page pre-filtered for that specific project prefix ID
   const handleNavigateToBugsFromProject = (project) => {
@@ -1231,6 +1320,14 @@ export default function QualityDashboard() {
                     setTargetBugsForDebug(bugsToSubmit);
                     setSubmitDebugModalOpen(true);
                   }}
+                  onTriggerReassignBug={(targetBugs) => {
+                    const bugsToReassign = (targetBugs && targetBugs.length > 0) ? targetBugs : [];
+                    if (bugsToReassign.length === 0) {
+                      toast.error('Please select at least one bug to reassign.');
+                      return;
+                    }
+                    setReassignModalTarget(bugsToReassign);
+                  }}
                   currentUser={displayName.split('@')[0]}
                   hiddenBugIds={hiddenBugIds}
                   scope={dashboardScope}
@@ -1265,6 +1362,10 @@ export default function QualityDashboard() {
             setTargetBugsForDebug(targetBugs);
             setSubmitDebugModalOpen(true);
           }}
+          onTriggerReassign={(bug) => {
+            setSelectedBugDetails(null);
+            setReassignModalTarget([bug]);
+          }}
           onOpenTimeline={(bug) => setTimelineDrawerBug(bug)}
         />
       )}
@@ -1279,6 +1380,18 @@ export default function QualityDashboard() {
             setTargetBugsForDebug([]);
           }}
           onSubmit={handleSubmitDebugging}
+          currentUserName={displayName.split('@')[0]}
+        />
+      )}
+
+      {/* REASSIGN BUG MODAL (Project Team Handoff) */}
+      {reassignModalTarget && (
+        <ReassignBugModal
+          isOpen={Boolean(reassignModalTarget)}
+          bugs={Array.isArray(reassignModalTarget) ? reassignModalTarget : [reassignModalTarget]}
+          onClose={() => setReassignModalTarget(null)}
+          onReassign={handleReassignBug}
+          projectsList={projects}
           currentUserName={displayName.split('@')[0]}
         />
       )}

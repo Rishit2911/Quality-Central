@@ -298,4 +298,12 @@ app.include_router(quality_chatbot_router)
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
+    import sys
+    from pathlib import Path
+
+    project_root = Path(__file__).resolve().parent.parent
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+
+    app_target = "main:app" if Path.cwd().name == "backend" else "backend.main:app"
+    uvicorn.run(app_target, host="127.0.0.1", port=8000, reload=True)

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   X, Clock, ArrowRight, User, CheckCircle2, AlertTriangle, 
   Plus, Edit3, MessageSquare, Send, RefreshCw, Shield, 
-  Layers, Tag, GitCommit, UserCheck, Sparkles, AlertCircle
+  Layers, Tag, GitCommit, UserCheck, Sparkles, AlertCircle, ArrowRightLeft
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -103,7 +103,7 @@ export default function BugAuditTimelineDrawer({
       return timelineEvents.filter(e => e.event_type === 'STATUS_CHANGE');
     }
     if (activeFilter === 'assignment') {
-      return timelineEvents.filter(e => e.event_type === 'ASSIGNMENT');
+      return timelineEvents.filter(e => e.event_type === 'ASSIGNMENT' || e.event_type === 'REASSIGNMENT');
     }
     if (activeFilter === 'fix') {
       return timelineEvents.filter(e => e.event_type === 'FIX_SUBMITTED');
@@ -119,7 +119,7 @@ export default function BugAuditTimelineDrawer({
     return {
       all: timelineEvents.length,
       status: timelineEvents.filter(e => e.event_type === 'STATUS_CHANGE').length,
-      assignment: timelineEvents.filter(e => e.event_type === 'ASSIGNMENT').length,
+      assignment: timelineEvents.filter(e => e.event_type === 'ASSIGNMENT' || e.event_type === 'REASSIGNMENT').length,
       fix: timelineEvents.filter(e => e.event_type === 'FIX_SUBMITTED').length,
       notes: timelineEvents.filter(e => e.event_type === 'AUDIT_NOTE').length,
     };
@@ -148,6 +148,15 @@ export default function BugAuditTimelineDrawer({
           border: isResolved ? 'border-emerald-200' : 'border-blue-200',
           bg: isResolved ? 'bg-emerald-50/50' : 'bg-blue-50/50',
           label: 'Status Transition'
+        };
+      case 'REASSIGNMENT':
+        return {
+          icon: ArrowRightLeft,
+          nodeBg: 'bg-indigo-600',
+          textColor: 'text-indigo-800',
+          border: 'border-indigo-200',
+          bg: 'bg-indigo-50/60',
+          label: 'Defect Reassigned'
         };
       case 'ASSIGNMENT':
         return {

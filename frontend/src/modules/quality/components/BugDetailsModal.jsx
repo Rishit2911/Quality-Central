@@ -3,7 +3,7 @@ import {
   X, ExternalLink, Calendar, User, Shield, AlertTriangle, 
   Layers, Tag, CheckCircle2, Lock, Eye, Download, Play, 
   ZoomIn, ZoomOut, RotateCcw, Image as ImageIcon, Video as VideoIcon,
-  Maximize2, Clock
+  Maximize2, Clock, ArrowRightLeft
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -16,6 +16,7 @@ export default function BugDetailsModal({
   onEdit, 
   onStatusChange, 
   onTriggerSubmitDebug, 
+  onTriggerReassign,
   onOpenTimeline,
   currentUser = 'Rishit' 
 }) {
@@ -62,6 +63,9 @@ export default function BugDetailsModal({
   };
 
   const isOwner = canUserEdit();
+  const myName = (typeof currentUser === 'string' ? currentUser : currentUser?.name || currentUser?.username || 'Rishit').toLowerCase().trim();
+  const myShort = myName.includes('@') ? myName.split('@')[0] : myName;
+  const isLeadOrAdmin = myShort === 'admin' || myName.includes('admin') || myShort.includes('bhupesh');
 
   const getSeverityBadge = (severity) => {
     switch (severity?.toLowerCase()) {
@@ -216,12 +220,28 @@ export default function BugDetailsModal({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
               <div>
                 <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider m-0">Assignee</p>
-                <p className="text-xs font-bold text-slate-800 mt-1 m-0 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-[10px] flex items-center justify-center font-bold">
-                    {bug.assignee ? bug.assignee.substring(0, 2).toUpperCase() : 'NA'}
-                  </span>
-                  {bug.assignee || 'Unassigned'}
-                </p>
+                <div className="text-xs font-bold text-slate-800 mt-1 m-0 flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-[10px] flex items-center justify-center font-bold shrink-0">
+                      {bug.assignee ? bug.assignee.substring(0, 2).toUpperCase() : 'NA'}
+                    </span>
+                    <span className="truncate">{bug.assignee || 'Unassigned'}</span>
+                  </div>
+                  {!['resolved', 'closed'].includes((bug.status || '').toLowerCase()) && onTriggerReassign && (isOwner || isLeadOrAdmin) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose?.();
+                        onTriggerReassign(bug);
+                      }}
+                      className="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded border border-indigo-200 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs shrink-0"
+                      title="Reassign bug to another developer as per project"
+                    >
+                      <ArrowRightLeft size={10} />
+                      <span>Reassign</span>
+                    </button>
+                  )}
+                </div>
               </div>
               <div>
                 <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider m-0">Priority</p>
@@ -471,6 +491,20 @@ export default function BugDetailsModal({
               >
                 Close
               </button>
+              {!['resolved', 'closed'].includes((currentStatus || '').toLowerCase()) && onTriggerReassign && (isOwner || isLeadOrAdmin) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose?.();
+                    onTriggerReassign(bug);
+                  }}
+                  className="px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Reassign bug to another developer as per project"
+                >
+                  <ArrowRightLeft size={14} className="text-indigo-600" />
+                  <span>Reassign Bug</span>
+                </button>
+              )}
               {isOwner ? (
                 <>
                   {onTriggerSubmitDebug && (
